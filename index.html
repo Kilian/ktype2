@@ -14,7 +14,9 @@
 </body>
 
   <script>
-    var maingame;
+    var maingame,
+        scroller,
+        frameCount = 0;
     window.addEventListener('load', loadResources, false);
 
     function loadResources() {
@@ -29,32 +31,32 @@
       gbox.addImage('logo', 'logo.png');
       gbox.addFont({ id: 'small', image: 'font', firstletter: ' ', tileh: 8, tilew: 8, tilerow: 255, gapx: 0, gapy: 0 });
 
-      gbox.addImage('playerSprite', 'playerSprite.png');
+      gbox.addImage('playerSprite', 'player.png');
 
       gbox.addTiles({
         id:      'playerTiles', // set a unique ID for future reference
         image:   'playerSprite', // Use the 'sprites' image, as loaded above
-        tileh:   16,
-        tilew:   16,
-        tilerow: 1,
+        tileh:   24,
+        tilew:   38,
+        tilerow: 6,
         gapx:    0,
         gapy:    0
       });
 
-      gbox.addImage('enemySprite', 'enemySprite.png');
+      gbox.addImage('enemySprite', 'enemy.png');
       gbox.addTiles({
         id:      'enemyTiles', // set a unique ID for future reference
         image:   'enemySprite', // Use the 'sprites' image, as loaded above
-        tileh:   16,
-        tilew:   16,
-        tilerow: 1,
+        tileh:   24,
+        tilew:   38,
+        tilerow: 6,
         gapx:    0,
         gapy:    0
       });
 
 
       gbox.addImage('backgroundImg', 'background.png');
-
+      gbox.addImage('movingstars', 'movingstars.png');
       gbox.setCallback(main);
       gbox.loadAll();
     }
@@ -84,8 +86,13 @@
       };
 
       maingame.initializeGame = function() {
-        maingame.hud.setWidget("score",{widget:"label",font:"small",value:0,dx:625,dy:15,clear:true}); // A score counter. This not only is a displayed value but will really keep the player's score.
-        maingame.hud.setWidget("lives",{widget:"symbols",minvalue:0,value:3,maxshown:3,tileset:"playerTiles",tiles:[0],dx:20,dy:10,gapx:20,gapy:0}); // The number of ships remaining
+        maingame.hud.setWidget("scorename",{widget:"label",font:"small",value:"score:",dx:550,dy:5,clear:true});
+        maingame.hud.setWidget("score",{widget:"label",font:"small",value:0,dx:600,dy:5,clear:true}); // A score counter. This not only is a displayed value but will really keep the player's score.
+
+        maingame.hud.setWidget("levelname",{widget:"label",font:"small",value:"level:",dx:550,dy:20,clear:true});
+        maingame.hud.setWidget("level",{widget:"label",font:"small",value:1,dx:600,dy:20,clear:true}); // A score counter. This not only is a displayed value but will really keep the player's score.
+
+        maingame.hud.setWidget("lives",{widget:"symbols",minvalue:0,value:3,maxshown:3,tileset:"playerTiles",tiles:[0],dx:10,dy:5,gapx:30,gapy:0}); // The number of ships remaining
         addBackground();
         addPlayer();
       }
@@ -100,11 +107,18 @@
         initialize: function () {
         },
         first: function () { //before drawing
+          // Increment the global frame counter.
+          frameCount++;
+          scroller = toys.shmup.generateScroller("background", "scroller", {
+            maxwidth: 640,
+            stage:  [{image:"movingstars"}]
+          });
+          scroller.setSpeed(2);
+          scroller.setLoop(0,640);
         },
         blit: function () { //drawing
           gbox.blitFade(gbox.getBufferContext(),{}); //clear screen
           gbox.blitAll(gbox.getBufferContext(), gbox.getImage('backgroundImg'), { dx: 0, dy: 0, alpha: 1});
-
         }
       });
     }
@@ -116,19 +130,31 @@
         tileset: 'playerTiles',
 
         initialize: function () {
-          toys.shmup.initialize(this, {});
+          toys.shmup.initialize(this, {
+            bounds:{x:0,y:35,w:gbox.getScreenW(),h:gbox.getScreenH()-58}
+          });
           this.x = 30;
           this.y= 240;
           this.health = 3;
-          toys.shmup.spawn(this);
+          console.log("foo!");
+
+          this.anim = {speed: 1, frames: [0,1,2,3,4,5]};
         },
         first: function () { //before drawing
           toys.shmup.controlKeys(this, { left: 'left', right: 'right', up: 'up', down: 'down' });
           toys.shmup.handleAccellerations(this);
           toys.shmup.applyForces(this);
           toys.shmup.keepInBounds(this);
+
+          //animation
+          this.animIndex = 'anim';
+          if (frameCount%this.anim.speed == 0) {
+            this.frame = help.decideFrame(frameCount, this.anim);
+          }
+
+
           if (gbox.keyIsHit("a")) {
-            this.fireBullet();
+            //this.fireBullet();
           }
 
         },
