@@ -16,7 +16,11 @@
   <script>
     var maingame,
         scroller,
-        frameCount = 0;
+        frameCount = 0
+        score: 0,
+        lives: 3,
+        level: 1;
+
     window.addEventListener('load', loadResources, false);
 
     function loadResources() {
@@ -126,7 +130,6 @@
             speed: 1,
             loopstart:0,
             loopend:640,
-            looprounds:6,
           });
         },
         blit: function () { //drawing
@@ -141,9 +144,7 @@
         id: 'playerid',
         group: 'player',
         tileset: 'playerTiles',
-        score: 0,
-        lives: 3,
-        level: 1,
+
 
         initialize: function () {
           toys.shmup.initialize(this, {
