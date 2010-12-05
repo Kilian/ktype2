@@ -28,11 +28,9 @@
       });
 
       gbox.addImage('font', 'font.png');
-      gbox.addImage('logo', 'logo.png');
       gbox.addFont({ id: 'small', image: 'font', firstletter: ' ', tileh: 8, tilew: 8, tilerow: 255, gapx: 0, gapy: 0 });
 
       gbox.addImage('playerSprite', 'player.png');
-
       gbox.addTiles({
         id:      'playerTiles', // set a unique ID for future reference
         image:   'playerSprite', // Use the 'sprites' image, as loaded above
@@ -40,7 +38,18 @@
         tilew:   38,
         tilerow: 6,
         gapx:    0,
-        gapy:    0
+        gapy:    0,
+      });
+
+      gbox.addImage('bulletImg', 'playerSprite.png');
+      gbox.addTiles({
+        id:      'bulletTile', // set a unique ID for future reference
+        image:   'bulletImg', // Use the 'sprites' image, as loaded above
+        tileh:   16,
+        tilew:   16,
+        tilerow: 1,
+        gapx:    0,
+        gapy:    0,
       });
 
       gbox.addImage('enemySprite', 'enemy.png');
@@ -54,15 +63,16 @@
         gapy:    0
       });
 
-
+      gbox.addImage('logo', 'logo.png');
       gbox.addImage('backgroundImg', 'background.png');
       gbox.addImage('movingstars', 'movingstars.png');
+
       gbox.setCallback(main);
       gbox.loadAll();
     }
 
     function main() {
-      gbox.setGroups(['background', 'player', 'enemy', 'game']);
+      gbox.setGroups(['background', 'player', 'enemy', 'playerbullets', 'enemybullets', 'game']);
       maingame = gamecycle.createMaingame('game', 'game');
 
       maingame.gameMenu = function () {return true;};
@@ -109,12 +119,15 @@
         first: function () { //before drawing
           // Increment the global frame counter.
           frameCount++;
+
           scroller = toys.shmup.generateScroller("background", "scroller", {
             maxwidth: 640,
-            stage:  [{image:"movingstars"}]
+            stage:  [{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"}],
+            speed: 1,
+            loopstart:0,
+            loopend:640,
+            looprounds:6,
           });
-          scroller.setSpeed(2);
-          scroller.setLoop(0,640);
         },
         blit: function () { //drawing
           gbox.blitFade(gbox.getBufferContext(),{}); //clear screen
@@ -128,15 +141,17 @@
         id: 'playerid',
         group: 'player',
         tileset: 'playerTiles',
+        score: 0,
+        lives: 3,
+        level: 1,
 
         initialize: function () {
           toys.shmup.initialize(this, {
-            bounds:{x:0,y:35,w:gbox.getScreenW(),h:gbox.getScreenH()-58}
+            bounds:{x:0,y:35,w:gbox.getScreenW(),h:gbox.getScreenH()-58},
           });
           this.x = 30;
           this.y= 240;
           this.health = 3;
-          console.log("foo!");
 
           this.anim = {speed: 1, frames: [0,1,2,3,4,5]};
         },
@@ -147,14 +162,12 @@
           toys.shmup.keepInBounds(this);
 
           //animation
-          this.animIndex = 'anim';
           if (frameCount%this.anim.speed == 0) {
             this.frame = help.decideFrame(frameCount, this.anim);
           }
 
-
           if (gbox.keyIsHit("a")) {
-            //this.fireBullet();
+            this.fireBullet();
           }
 
         },
@@ -173,11 +186,12 @@
 
         //helper functions
         fireBullet:function() {
-          toys.shmup.fireBullet("playerbullets",null, {
-            collidegroup:"enemies",
-            from:this,
-            tileset:"playerTiles",
-            accx:8,accy:0});
+          //toys.shmup.fireBullet("playerbullets",null, {
+          //  collidegroup:"enemies",
+          //  from:this,
+          //  upper:false,
+          //  tileset:"bulletTile",
+          //  accx:8,accy:0});
         }
       });
     }
