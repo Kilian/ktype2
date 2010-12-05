@@ -16,10 +16,10 @@
   <script>
     var maingame,
         scroller,
-        frameCount = 0
-        score: 0,
-        lives: 3,
-        level: 1;
+        frameCount = 0,
+        score= 0,
+        lives= 3,
+        level= 1;
 
     window.addEventListener('load', loadResources, false);
 
@@ -119,22 +119,28 @@
         id: 'backgroundid',
         group: 'background',
         initialize: function () {
+          scroller = toys.shmup.generateScroller("background", "scroller", {
+            maxwidth: 1280,
+            stage:  [{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"}],
+            speed: 1,
+          });
+
         },
         first: function () { //before drawing
           // Increment the global frame counter.
           frameCount++;
-
-          scroller = toys.shmup.generateScroller("background", "scroller", {
-            maxwidth: 640,
-            stage:  [{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"}],
-            speed: 1,
-            loopstart:0,
-            loopend:640,
-          });
+          this.script();
         },
         blit: function () { //drawing
           gbox.blitFade(gbox.getBufferContext(),{}); //clear screen
           gbox.blitAll(gbox.getBufferContext(), gbox.getImage('backgroundImg'), { dx: 0, dy: 0, alpha: 1});
+        },
+        script: function(x) { //works but not like it should
+          if(scroller.x == 640) {
+            scroller.x = 0
+          }
+          scroller.x += 5;
+
         }
       });
     }
