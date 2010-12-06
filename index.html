@@ -18,8 +18,7 @@
         scroller,
         frameCount = 0,
         score= 0,
-        lives= 3,
-        level= 1;
+        lives= 3;
 
     window.addEventListener('load', loadResources, false);
 
@@ -35,6 +34,9 @@
 
     function setLife(value) {
       lives += value;
+      if (lives > 3)  {
+        lives = 3;
+      }
       if (lives < 1) {
         maingame.gameIsCompleted(); // dead
       } else {
@@ -98,10 +100,14 @@
       gbox.setGroups(['background', 'player', 'enemy', 'playerbullets', 'enemybullets', 'game']);
       maingame = gamecycle.createMaingame('game', 'game');
 
-      maingame.gameMenu = function () {return true;};
-      maingame.gameIntroAnimation = function() {return true;};
+      maingame.gameMenu = function () {return true;}; // no menu
+      maingame.gameIntroAnimation = function() {return true;}; //no game intro animation
 
-      maingame.gameTitleIntroAnimation=function(reset) {
+      maingame.newLife = function () { //player is reborn
+        setLife(4);
+      };
+
+      maingame.gameTitleIntroAnimation=function(reset) { //simple title animation
         if (reset) {
           toys.resetToy(this, 'rising');
         }
@@ -118,6 +124,31 @@
         });
       };
 
+      maingame.changeLevel=function(level) {
+        // The first time the "changeLevel" is called, level is NULL. Our first stage is "1", so...
+        if (level==null) {
+          level=1;
+        }
+
+        maingame.level=level; // "maingame" is handy enough to store some game data.
+        maingame.hud.setValue("level","value",level);
+
+        maingame.enemiesToKill = level*15
+        if (level < 8) {
+          maingame.enemiesSpeed = parseInt(5 + level, "10");
+        } else if (level > 15) {
+          maingame.enemiesSpeed = parseInt(12, "10");
+        } else {
+          maingame.enemiesSpeed = parseInt(5 + level*0.5, "10");
+        }
+
+        this.newLife();
+
+      };
+
+      maingame.newLife = function(up) {
+      }
+
       maingame.initializeGame = function() {
         maingame.hud.setWidget("scorename",{widget:"label",font:"small",value:"score:",dx:550,dy:5,clear:true});
         maingame.hud.setWidget("score",{widget:"label",font:"small",value:0,dx:600,dy:5,clear:true});
@@ -128,7 +159,52 @@
         maingame.hud.setWidget("lives",{widget:"symbols",minvalue:0,value:3,maxshown:3,tileset:"playerTiles",tiles:[0],dx:10,dy:5,gapx:30,gapy:0}); // The number of ships remaining
 
         addBackground();
-        addPlayer();
+		  	addPlayer();
+      }
+
+      maingame.addEnemy = function (data) {
+        gbox.addObject({
+				  enemyid:data.id,
+  				id:"enemy"+data.id,
+  				group:"enemies",
+  				tileset:"enemyTiles",
+				  initialize:function() {
+					  toys.shmup.initialize(this,{
+  			      x:data.x,
+					    y:data.y
+					  });
+
+					  this.anim = {speed: 1, frames: [0,1,2,3,4,5]};
+				  },
+				  first: function () {
+
+				    //animation
+            if (frameCount%this.anim.speed == 0) {
+              this.frame = help.decideFrame(frameCount, this.anim);
+            }
+
+            //if enemy hits player, kill player and ship
+            var player=gbox.getObject("player","playerid");
+						if (gbox.collides(this,player,3)) {
+  						player.kill();
+  						this.kill(false);
+						}
+				  },
+				  blit: function () {
+					  gbox.blitTile(gbox.getBufferContext(),{tileset:this.tileset,tile:this.frame,dx:this.x,dy:this.y,fliph:this.fliph,flipv:this.flipv,camera:this.camera,alpha:1});
+				  },
+				  kill: function(points) {
+            //if player scored, set the score and remove single enemy. Else, remove all enemies
+				    if(points) {
+				      setScore(100);
+              gbox.trashObject(this);
+				    } else {
+				      gbox.trashGroup("enemybullets");
+				      gbox.trashGroup("enemies");
+				    }
+            gbox.purgeGarbage();
+				  }
+        });
       }
 
       gbox.go();
@@ -178,40 +254,53 @@
           });
           this.x = 30;
           this.y= 240;
-          this.health = 3;
 
           this.anim = {speed: 1, frames: [0,1,2,3,4,5]};
         },
         first: function () { //before drawing
-          toys.shmup.controlKeys(this, { left: 'left', right: 'right', up: 'up', down: 'down' });
-          toys.shmup.handleAccellerations(this);
-          toys.shmup.applyForces(this);
-          toys.shmup.keepInBounds(this);
 
-          //animation
-          if (frameCount%this.anim.speed == 0) {
-            this.frame = help.decideFrame(frameCount, this.anim);
-          }
+          if (!this.killed&&!maingame.gameIsHold()) {
+            toys.shmup.controlKeys(this, { left: 'left', right: 'right', up: 'up', down: 'down' });
+            toys.shmup.handleAccellerations(this);
+            toys.shmup.applyForces(this);
+            toys.shmup.keepInBounds(this);
 
-          if (gbox.keyIsHit("a")) {
-            this.fireBullet();
+            //animation
+            if (frameCount%this.anim.speed == 0) {
+              this.frame = help.decideFrame(frameCount, this.anim);
+            }
+
+            if (gbox.keyIsHit("a")) {
+              this.fireBullet();
+            }
           }
 
         },
         blit: function () { //drawing
-          gbox.blitTile(gbox.getBufferContext(), {
-            tileset: this.tileset,
-            tile: this.frame,
-            dx: this.x,
-            dy: this.y,
-            fliph:  this.fliph,
-            flixv: this.flipv,
-            camera: this.camera,
-            alpha: 1
-          });
+          if (!this.killed) {
+            gbox.blitTile(gbox.getBufferContext(), {
+              tileset: this.tileset,
+              tile: this.frame,
+              dx: this.x,
+              dy: this.y,
+              fliph:  this.fliph,
+              flixv: this.flipv,
+              camera: this.camera,
+              alpha: 1
+            });
+          }
         },
-
         //helper functions
+        kill:function() {
+					if (!this.killed) { // If we're alive...
+						this.killed=true;
+						setLife(-1);
+
+            //move player back to begin position
+            this.x = 30;
+            this.y= 240;
+					}
+				},
         fireBullet:function() {
           toys.shmup.fireBullet("playerbullets",null, {
             collidegroup:"enemies",
@@ -219,8 +308,8 @@
             tileset:"bulletTile",
             accx:8,accy:0});
         },
-        hitByBullet: function() {
-
+        hitByBullet: function(by) {
+          toys.shmup.hitByBullet(this,by);
         }
       });
     }
