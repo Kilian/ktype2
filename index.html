@@ -159,51 +159,52 @@
         maingame.hud.setWidget("lives",{widget:"symbols",minvalue:0,value:3,maxshown:3,tileset:"playerTiles",tiles:[0],dx:10,dy:5,gapx:30,gapy:0}); // The number of ships remaining
 
         addBackground();
-		  	addPlayer();
+        addPlayer();
       }
 
       maingame.addEnemy = function (data) {
         gbox.addObject({
-				  enemyid:data.id,
-  				id:"enemy"+data.id,
-  				group:"enemies",
-  				tileset:"enemyTiles",
-				  initialize:function() {
-					  toys.shmup.initialize(this,{
-  			      x:data.x,
-					    y:data.y
-					  });
+          enemyid:data.id,
+          id:"enemy"+data.id,
+          group:"enemies",
+          tileset:"enemyTiles",
+          initialize:function() {
+            toys.shmup.initialize(this,{
+              x:data.x,
+              y:data.y
+            });
 
-					  this.anim = {speed: 1, frames: [0,1,2,3,4,5]};
-				  },
-				  first: function () {
+            this.anim = {speed: 1, frames: [0,1,2,3,4,5]};
+          },
+          first: function () {
 
-				    //animation
+            //animation
             if (frameCount%this.anim.speed == 0) {
               this.frame = help.decideFrame(frameCount, this.anim);
             }
 
             //if enemy hits player, kill player and ship
             var player=gbox.getObject("player","playerid");
-						if (gbox.collides(this,player,3)) {
-  						player.kill();
-  						this.kill(false);
-						}
-				  },
-				  blit: function () {
-					  gbox.blitTile(gbox.getBufferContext(),{tileset:this.tileset,tile:this.frame,dx:this.x,dy:this.y,fliph:this.fliph,flipv:this.flipv,camera:this.camera,alpha:1});
-				  },
-				  kill: function(points) {
+            if (gbox.collides(this,player,3)) {
+              player.kill();
+              this.kill(false);
+            }
+          },
+          blit: function () {
+            gbox.blitTile(gbox.getBufferContext(),{tileset:this.tileset,tile:this.frame,dx:this.x,dy:this.y,fliph:this.fliph,flipv:this.flipv,camera:this.camera,alpha:1});
+          },
+          kill: function(points) {
             //if player scored, set the score and remove single enemy. Else, remove all enemies
-				    if(points) {
-				      setScore(100);
+            if(points) {
+              setScore(100);
+              maingame.enemiesToKill -=1;
               gbox.trashObject(this);
-				    } else {
-				      gbox.trashGroup("enemybullets");
-				      gbox.trashGroup("enemies");
-				    }
+            } else {
+              gbox.trashGroup("enemybullets");
+              gbox.trashGroup("enemies");
+            }
             gbox.purgeGarbage();
-				  }
+          }
         });
       }
 
@@ -231,11 +232,17 @@
           gbox.blitFade(gbox.getBufferContext(),{}); //clear screen
           gbox.blitAll(gbox.getBufferContext(), gbox.getImage('backgroundImg'), { dx: 0, dy: 0, alpha: 1});
         },
-        script: function(x) { //works but not like it should
+        script: function(x) {
+
+          //works but not like it should
           if(scroller.x == 640) {
             scroller.x = 0
           }
           scroller.x += 5;
+
+          if (maingame.enemiesToKill < 1) {
+            maingame.changeLevel(maingame.level+1);
+          }
 
         }
       });
@@ -292,15 +299,15 @@
         },
         //helper functions
         kill:function() {
-					if (!this.killed) { // If we're alive...
-						this.killed=true;
-						setLife(-1);
+          if (!this.killed) { // If we're alive...
+            this.killed=true;
+            setLife(-1);
 
             //move player back to begin position
             this.x = 30;
             this.y= 240;
-					}
-				},
+          }
+        },
         fireBullet:function() {
           toys.shmup.fireBullet("playerbullets",null, {
             collidegroup:"enemies",
