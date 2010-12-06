@@ -23,6 +23,25 @@
 
     window.addEventListener('load', loadResources, false);
 
+    function setScore(value) {
+      score += value;
+      maingame.hud.setValue("score","value",score);
+    }
+
+    function setLevel(value) {
+      level += value;
+      maingame.hud.setValue("level","value",level);
+    }
+
+    function setLife(value) {
+      lives += value;
+      if (lives < 1) {
+        maingame.gameIsCompleted(); // dead
+      } else {
+        maingame.hud.setValue("lives","value",lives);
+      }
+    }
+
     function loadResources() {
       help.akihabaraInit({
         title: 'kType',
@@ -36,8 +55,8 @@
 
       gbox.addImage('playerSprite', 'player.png');
       gbox.addTiles({
-        id:      'playerTiles', // set a unique ID for future reference
-        image:   'playerSprite', // Use the 'sprites' image, as loaded above
+        id:      'playerTiles',
+        image:   'playerSprite',
         tileh:   24,
         tilew:   38,
         tilerow: 6,
@@ -47,8 +66,8 @@
 
       gbox.addImage('bulletImg', 'playerSprite.png');
       gbox.addTiles({
-        id:      'bulletTile', // set a unique ID for future reference
-        image:   'bulletImg', // Use the 'sprites' image, as loaded above
+        id:      'bulletTile',
+        image:   'bulletImg',
         tileh:   16,
         tilew:   16,
         tilerow: 1,
@@ -58,8 +77,8 @@
 
       gbox.addImage('enemySprite', 'enemy.png');
       gbox.addTiles({
-        id:      'enemyTiles', // set a unique ID for future reference
-        image:   'enemySprite', // Use the 'sprites' image, as loaded above
+        id:      'enemyTiles',
+        image:   'enemySprite',
         tileh:   24,
         tilew:   38,
         tilerow: 6,
@@ -101,12 +120,13 @@
 
       maingame.initializeGame = function() {
         maingame.hud.setWidget("scorename",{widget:"label",font:"small",value:"score:",dx:550,dy:5,clear:true});
-        maingame.hud.setWidget("score",{widget:"label",font:"small",value:0,dx:600,dy:5,clear:true}); // A score counter. This not only is a displayed value but will really keep the player's score.
+        maingame.hud.setWidget("score",{widget:"label",font:"small",value:0,dx:600,dy:5,clear:true});
 
         maingame.hud.setWidget("levelname",{widget:"label",font:"small",value:"level:",dx:550,dy:20,clear:true});
-        maingame.hud.setWidget("level",{widget:"label",font:"small",value:1,dx:600,dy:20,clear:true}); // A score counter. This not only is a displayed value but will really keep the player's score.
+        maingame.hud.setWidget("level",{widget:"label",font:"small",value:1,dx:600,dy:20,clear:true});
 
         maingame.hud.setWidget("lives",{widget:"symbols",minvalue:0,value:3,maxshown:3,tileset:"playerTiles",tiles:[0],dx:10,dy:5,gapx:30,gapy:0}); // The number of ships remaining
+
         addBackground();
         addPlayer();
       }
@@ -121,7 +141,7 @@
         initialize: function () {
           scroller = toys.shmup.generateScroller("background", "scroller", {
             maxwidth: 1280,
-            stage:  [{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"}],
+            stage:  [{image:"movingstars"},{image:"movingstars"},{image:"movingstars"},{image:"movingstars"}], // why 4?
             speed: 1,
           });
 
@@ -193,12 +213,14 @@
 
         //helper functions
         fireBullet:function() {
-          //toys.shmup.fireBullet("playerbullets",null, {
-          //  collidegroup:"enemies",
-          //  from:this,
-          //  upper:false,
-          //  tileset:"bulletTile",
-          //  accx:8,accy:0});
+          toys.shmup.fireBullet("playerbullets",null, {
+            collidegroup:"enemies",
+            from:this,
+            tileset:"bulletTile",
+            accx:8,accy:0});
+        },
+        hitByBullet: function() {
+
         }
       });
     }
