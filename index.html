@@ -38,6 +38,9 @@
         lives = 3;
       }
       if (lives < 1) {
+        maingame.endlevelIntroAnimation = function() {return true;};
+        maingame.gameEndingIntroAnimation = function() {return true;};
+        maingame.playerDied();
         maingame.gameIsCompleted(); // dead
       } else {
         maingame.hud.setValue("lives","value",lives);
