@@ -164,8 +164,7 @@
 
       maingame.addEnemy = function (data) {
         gbox.addObject({
-          enemyid:data.id,
-          id:"enemy"+data.id,
+          id:"enemy",
           group:"enemies",
           tileset:"enemyTiles",
           initialize:function() {
@@ -240,10 +239,25 @@
           }
           scroller.x += 5;
 
+          //check if next level
           if (maingame.enemiesToKill < 1) {
             maingame.changeLevel(maingame.level+1);
           }
 
+          //randomly generate enemies
+          if (false && Math.random(0, maingame.level) < maingame.level/2) {
+            toys.shmup.generateEnemy(
+              "enemies",
+              null,
+              {
+                y:help.random(10,gbox.getScreenH()-60),
+                x:-40,
+                accy:0,
+                accx: -1*maingame.enemiesSpeed,
+                id: "enemy"
+              },
+              maingame.addEnemy);
+          }
         }
       });
     }
@@ -261,6 +275,7 @@
           });
           this.x = 30;
           this.y= 240;
+          this.timeout = 1;
 
           this.anim = {speed: 1, frames: [0,1,2,3,4,5]};
         },
@@ -277,7 +292,8 @@
               this.frame = help.decideFrame(frameCount, this.anim);
             }
 
-            if (gbox.keyIsHit("a")) {
+            this.timeout--;
+            if (gbox.keyIsHit("a") && this.timeout < 1) {
               this.fireBullet();
             }
           }
@@ -309,10 +325,12 @@
           }
         },
         fireBullet:function() {
+          this.timeout = 5;
           toys.shmup.fireBullet("playerbullets",null, {
             collidegroup:"enemies",
             from:this,
             tileset:"bulletTile",
+            frames:{speed:1,frames:[0]},
             accx:8,accy:0});
         },
         hitByBullet: function(by) {
